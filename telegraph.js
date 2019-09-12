@@ -1,6 +1,7 @@
 const puppeteer = require('puppeteer');
 const path = require('path');
 const fs = require('fs');
+const del = require('del');
 exports.Telegraph = Telegraph;
 
 let tg = new Telegraph(203664770);
@@ -30,10 +31,14 @@ function Telegraph(thread_num) {
         };
         try {
             await page.goto(`https://2ch.hk/b/res/${this.thread_num}.html`);
-            fs.mkdir(`./${this.thread_num}`);
+            fs.mkdir(`./${this.thread_num}`, (err) => {
+                console.log(err);
+                return
+            });
         } catch (error) {
             console.log(error);
-            console.log("2ch`s not responding")
+            console.log("2ch`s not responding");
+            browser.close();
             return;
         }
         await page.waitFor(3560);
@@ -69,8 +74,12 @@ function Telegraph(thread_num) {
         await browser.close();
     };
     this.post = async function () {
+        if (this.post_list.length === 0) {
+            console.log("seems like folder issues");
+            return null;
+        }
         const browser = await puppeteer.launch({
-            headless: true,
+            headless: false,
             waitUntil: 'load'
         });
         const page = await browser.newPage();
@@ -97,7 +106,7 @@ function Telegraph(thread_num) {
                     page.waitForFileChooser(),
                     page.click(image_button),
                 ]);
-                await fileChooser.accept([file]);
+                fileChooser.accept([file]);
                 await page.waitFor(200);
                 console.log(`${file} started to upload`);
             } catch (error) {
@@ -107,13 +116,14 @@ function Telegraph(thread_num) {
 
         }
         console.log("finishing");
-        await page.waitFor(5000);
+        await page.waitFor(1000 * 60 * 0.5);
         await page.click("#_publish_button");
         await page.waitFor(1000);
         let url = await page.url();
         console.log(url);
         browser.close();
         this.telegraph_url = url;
+        del([`./${this.thread_num}`]);
         return url;
     };
     this.update_list = function () {
@@ -128,7 +138,7 @@ function Telegraph(thread_num) {
                     return a.slice(0, -4) - b.slice(0, -4);
                 })
                 .map(file => {
-                    return `${directoryPath}\\${file}`;
+                    return `${directoryPath}/${file}`;
                 });
             console.log(`number of posts - ${this.post_list.length}`);
         });
