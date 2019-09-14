@@ -37,8 +37,7 @@ post_new();
 
 function post_new() {
     pasre_thread(top_threads, nop, {
-            num: 2,
-            max_posts: 250
+            num: 5
         })
         .then(res => {
             //res = [...,[title,score,views,num,posts],...]
