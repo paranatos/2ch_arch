@@ -58,7 +58,7 @@ function Telegraph(thread_num, _headless = true) {
         const elements = await page.$$(".post");
         for (let i = 0; i < elements.length; i++) {
             try {
-                let _path = path.normalize(`./${this.thread_num}\\${i}.png`);
+                let _path = path.join(this.thread_num, `${i}.png`);
                 await elements[i].screenshot({
                     path: _path
                 });
@@ -135,8 +135,7 @@ function Telegraph(thread_num, _headless = true) {
                     return a.slice(0, -4) - b.slice(0, -4);
                 })
                 .map(file => {
-                    console.log(path.resolve(`${directoryPath}/${file}`));
-                    return path.resolve(`${directoryPath}/${file}`);
+                    return path.join(directoryPath, file);
                 });
             console.log(`number of posts - ${this.post_list.length}`);
         });
