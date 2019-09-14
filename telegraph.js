@@ -62,6 +62,10 @@ function Telegraph(thread_num, _headless = true) {
                 await elements[i].screenshot({
                     path: _path
                 });
+                if (i % 20 === 0) {
+                    await (console.log("bip ", i));
+                }
+
             } catch (e) {
                 console.log(`couldnt take screenshot of element with index: ${i}. cause: `, e)
             }
