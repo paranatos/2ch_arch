@@ -4,21 +4,14 @@ const fs = require('fs');
 const del = require('del');
 exports.Telegraph = Telegraph;
 
-let tg = new Telegraph(203664770);
-(async () => {
-    await tg.get_thread();
-    await tg.post();
-})();
 
-
-
-function Telegraph(thread_num) {
+function Telegraph(thread_num, _headless = true) {
     this.thread_num = thread_num;
     this.post_list;
     this.telegraph_url;
     this.get_thread = async function () {
         const browser = await puppeteer.launch({
-            headless: true,
+            headless: _headless,
             waitUntil: 'load'
         });
 
@@ -30,14 +23,16 @@ function Telegraph(thread_num) {
             width: 414
         };
         try {
-            await page.goto(`https://2ch.hk/b/res/${this.thread_num}.html`);
+            await page.goto(`https://2ch.hk/b/res/${this.thread_num}.html`, {
+                timeout: 1000 * 60 * 2
+            });
             fs.mkdir(`./${this.thread_num}`, (err) => {
                 console.log(err);
                 return
             });
         } catch (error) {
-            console.log(error);
             console.log("2ch`s not responding");
+            console.log(`https://2ch.hk/b/res/${this.thread_num}.html`);
             browser.close();
             return;
         }
@@ -63,8 +58,9 @@ function Telegraph(thread_num) {
         const elements = await page.$$(".post");
         for (let i = 0; i < elements.length; i++) {
             try {
+                let _path = path.normalize(`./${this.thread_num}\\${i}.png`);
                 await elements[i].screenshot({
-                    path: `./${this.thread_num}/${i}.png`
+                    path: _path
                 });
             } catch (e) {
                 console.log(`couldnt take screenshot of element with index: ${i}. cause: `, e)
@@ -74,12 +70,12 @@ function Telegraph(thread_num) {
         await browser.close();
     };
     this.post = async function () {
-        if (this.post_list.length === 0) {
-            console.log("seems like folder issues");
+        if (!this.post_list) {
+            console.log("seems like something went wrong");
             return null;
         }
         const browser = await puppeteer.launch({
-            headless: false,
+            headless: _headless,
             waitUntil: 'load'
         });
         const page = await browser.newPage();
@@ -112,18 +108,19 @@ function Telegraph(thread_num) {
             } catch (error) {
                 console.log(error);
                 console.log(`Failed to upload ${file} `);
+                await page.waitFor(2000);
             }
 
         }
         console.log("finishing");
         await page.waitFor(1000 * 60 * 0.5);
         await page.click("#_publish_button");
-        await page.waitFor(1000);
+        await page.waitFor(5000);
         let url = await page.url();
         console.log(url);
-        browser.close();
+        await browser.close();
         this.telegraph_url = url;
-        del([`./${this.thread_num}`]);
+        await del([`./${this.thread_num}`]);
         return url;
     };
     this.update_list = function () {
@@ -138,7 +135,8 @@ function Telegraph(thread_num) {
                     return a.slice(0, -4) - b.slice(0, -4);
                 })
                 .map(file => {
-                    return `${directoryPath}/${file}`;
+                    console.log(path.resolve(`${directoryPath}/${file}`));
+                    return path.resolve(`${directoryPath}/${file}`);
                 });
             console.log(`number of posts - ${this.post_list.length}`);
         });
