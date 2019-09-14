@@ -46,7 +46,7 @@ function Telegraph(thread_num, _headless = true) {
         await page.click(close_sel);
         //making background and borders white
         await page.addStyleTag({
-            content: '.post.post_type_reply{border-color: white;}:root{--theme_default_postbg:white}'
+            content: '.post.post_type_reply{border-color: white;}:root{--theme_default_postbg:white;--theme_default_bg:white}'
         });
         const bodyHandle = await page.$('body');
         const boundingBox = await bodyHandle.boundingBox();
