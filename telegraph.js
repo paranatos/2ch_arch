@@ -5,7 +5,6 @@ const del = require('del');
 const async = require('async');
 exports.Telegraph = Telegraph;
 
-
 function Telegraph(thread_num, _headless = true) {
     this.thread_num = String(thread_num);
     this.post_list;
@@ -83,7 +82,9 @@ function Telegraph(thread_num, _headless = true) {
                 }));
                 if (i % 20 === 0 && i != 0) {
                     console.log("bip - ", i);
-                    await Promise.all(promises_of_screens);
+                    await Promise.all(promises_of_screens).catch(e => {
+                        console.log(e);
+                    });
                     promises_of_screens = [];
                 }
             } catch (e) {

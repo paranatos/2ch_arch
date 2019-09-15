@@ -52,10 +52,10 @@ function post_new() {
             });
         })
         .then(async (threads) => {
-            if (first_time) {
-                threads = threads.splice(0, 2);
-                first_time = false;
-            }
+            /*  if (first_time) {
+                 threads = threads.splice(0, 2);
+                 first_time = false;
+             } */
             let urls = [];
             for (thread of threads) {
                 console.log(thread[0]);
