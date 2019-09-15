@@ -31,13 +31,15 @@ const nop = ["webm", "fap", "вебм", "фап", "аварий", "ролл", "�
     "флорентина", "аниме", "пкм", "qtr4", "как можно любить тян которую кто-то ебал",
     "угадай", "кунчик", "тест", "test", "морская улиточка", "не иметь тян", "покрас", "европа",
     "инцел", "танцульки",
-];
-
+];;
+let first_time = true;
 post_new();
+setInterval(post_new, 1000 * 60 * 10);
 
 function post_new() {
     pasre_thread(top_threads, nop, {
-            num: 5
+            num: 10,
+            max_posts: 500
         })
         .then(res => {
             //res = [...,[title,score,views,num,posts],...]
@@ -50,13 +52,17 @@ function post_new() {
             });
         })
         .then(async (threads) => {
+            if (first_time) {
+                threads = threads.splice(0, 2);
+                first_time = false;
+            }
             let urls = [];
             for (thread of threads) {
                 console.log(thread[0]);
                 let telegraph = new Telegraph(thread[3]);
                 await telegraph.get_thread();
                 let url = await telegraph.post();
-                await urls.push(url);
+                urls.push(url);
             }
             return urls;
 

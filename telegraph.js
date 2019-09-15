@@ -2,11 +2,12 @@ const puppeteer = require('puppeteer');
 const path = require('path');
 const fs = require('fs');
 const del = require('del');
+const async = require('async');
 exports.Telegraph = Telegraph;
 
 
 function Telegraph(thread_num, _headless = true) {
-    this.thread_num = thread_num;
+    this.thread_num = String(thread_num);
     this.post_list;
     this.telegraph_url;
     this.get_thread = async function () {
@@ -24,7 +25,7 @@ function Telegraph(thread_num, _headless = true) {
         };
         try {
             await page.goto(`https://2ch.hk/b/res/${this.thread_num}.html`, {
-                timeout: 1000 * 60 * 2
+                timeout: 1000 * 60
             });
             fs.mkdir(`./${this.thread_num}`, (err) => {
                 console.log(err);
@@ -43,7 +44,11 @@ function Telegraph(thread_num, _headless = true) {
             console.log("hm");
         }
         await page.waitFor(2050);
-        await page.click(close_sel);
+        try {
+            await page.click(close_sel);
+        } catch (error) {
+            console.log("No 2ch banner");
+        }
         //making background and borders white
         await page.addStyleTag({
             content: '.post.post_type_reply{border-color: white;}:root{--theme_default_postbg:white;--theme_default_bg:white}'
@@ -56,16 +61,31 @@ function Telegraph(thread_num, _headless = true) {
         };
         await page.setViewport(Object.assign({}, defaultViewport, newViewport));
         const elements = await page.$$(".post");
+        /*       let index = 0;
+        async.mapLimit(elements, 5, async function (el) {
+            let _path = path.join(this.thread_num, `${index}.png`);
+            await el.screenshot({
+                path: _path
+            });
+            index++;
+        }, (err, results) => {
+            if (err) throw err
+            // results is now an array of the response bodies
+            console.log(results)
+        })
+ */
+        let promises_of_screens = [];
         for (let i = 0; i < elements.length; i++) {
             try {
                 let _path = path.join(this.thread_num, `${i}.png`);
-                await elements[i].screenshot({
+                promises_of_screens.push(elements[i].screenshot({
                     path: _path
-                });
-                if (i % 20 === 0) {
-                    await (console.log("bip ", i));
+                }));
+                if (i % 20 === 0 && i != 0) {
+                    console.log("bip - ", i);
+                    await Promise.all(promises_of_screens);
+                    promises_of_screens = [];
                 }
-
             } catch (e) {
                 console.log(`couldnt take screenshot of element with index: ${i}. cause: `, e)
             }
@@ -94,7 +114,7 @@ function Telegraph(thread_num, _headless = true) {
         await page.type(header, `Thread ${this.thread_num} `);
         page.keyboard.press(String.fromCharCode(13));
         await page.waitForSelector(author);
-        await page.type(author, ">>>");
+        await page.type(author, "Udobnoe");
         page.keyboard.press(String.fromCharCode(13));
         await page.waitForSelector(editor);
         await page.type(editor, "https://t.me/daily_b");
@@ -106,15 +126,15 @@ function Telegraph(thread_num, _headless = true) {
                     page.waitForFileChooser(),
                     page.click(image_button),
                 ]);
-                fileChooser.accept([file]);
-                await page.waitFor(200);
+                await fileChooser.accept([file]);
                 console.log(`${file} started to upload`);
+                await page.waitFor(500);
             } catch (error) {
                 console.log(error);
                 console.log(`Failed to upload ${file} `);
-                await page.waitFor(2000);
+                page.keyboard.press(String.fromCharCode(13));
+                await page.waitForSelector(image_button);
             }
-
         }
         console.log("finishing");
         await page.waitFor(1000 * 60 * 0.5);
